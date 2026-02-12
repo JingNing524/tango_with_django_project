@@ -34,12 +34,19 @@ def index(request):
     
     visitor_cookie_handler(request)
     context_dict['visits'] = request.session['visits']
+    
 
     return render(request, 'rango/index.html', context=context_dict)
 
 
 def about(request):
-    context_dict = {'boldmessage': 'This tutorial has been put together by Jing Ning Huang'}
+    visitor_cookie_handler(request)
+
+    context_dict = {
+        'boldmessage': 'This tutorial has been put together by Jing Ning Huang',
+        'visits': request.session['visits']
+    }
+
     return render(request, 'rango/about.html', context=context_dict)
 
 
