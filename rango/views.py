@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from datetime import datetime
 
 
 
@@ -35,11 +36,16 @@ def index(request):
     context_dict['boldmessage'] = 'Crunchy, creamy, cookie, candy, cupcake!'
     context_dict['categories'] = category_list
     context_dict['pages'] = page_list
+    context_dict['visits'] = int(request.COOKIES.get('visits', '1'))
     
-    request.session.set_test_cookie()
+    # Obtain our Response object early so we can add cookie information.
+    response = render(request, 'rango/index.html', context=context_dict)
 
-    # Render the response and send it back!
-    return render(request, 'rango/index.html', context=context_dict)
+    # Call the helper function to handle the cookies
+    visitor_cookie_handler(request, response)
+
+    # Return response back to the user, updating any cookies that need changed.
+    return response
 
 
 def about(request):
@@ -218,3 +224,28 @@ def restricted(request):
 def user_logout(request):
     logout(request)
     return redirect(reverse('rango:index'))
+
+
+
+def visitor_cookie_handler(request, response):
+    # Get the number of visits to the site.
+    # Use COOKIES.get() to obtain the visits cookie.
+    # If the cookie exists, the value returned is casted to an integer.
+    # If the cookie does not exist, then the default value of 1 is used.
+    visits = int(request.COOKIES.get('visits', '1'))
+
+    last_visit_cookie = request.COOKIES.get('last_visit', str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7], '%Y-%m-%d %H:%M:%S')
+
+    # If it's been more than a day since the last visit…
+    if (datetime.now() - last_visit_time).days > 0:
+        visits = visits + 1
+        # Update the last visit cookie now that we have updated the count
+        response.set_cookie('last_visit', str(datetime.now()))
+    else:
+        # Set the last visit cookie
+        response.set_cookie('last_visit', last_visit_cookie)
+
+    # Update/set the visits cookie
+    response.set_cookie('visits', visits)
+
